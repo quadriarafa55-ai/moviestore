@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: moviewstore
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: HF_TOKEN
+        sync: false
+      - key: HF_MODEL
+        value: stabilityai/stable-diffusion-xl-base-1.0
