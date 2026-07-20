@@ -1,18 +1,1 @@
-// Moviewstore secure AI image endpoint
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
-const PORT = process.env.PORT || 8787;
-const MODEL = process.env.HF_MODEL || 'stabilityai/stable-diffusion-xl-base-1.0';
-const token = process.env.HF_TOKEN;
-const appDir = __dirname;
-function json(res, code, data){res.writeHead(code, {'content-type':'application/json'});res.end(JSON.stringify(data));}
-const server=http.createServer(async (req,res)=>{
-  const route=(req.url||'/').split('?')[0];
-  if(route==='/' || route==='/index.html'){try{const html=fs.readFileSync(path.join(appDir,'index.html'));res.writeHead(200,{'content-type':'text/html; charset=utf-8'});return res.end(html)}catch(e){return json(res,500,{error:'Frontend file is missing.'})}}
-  if(route==='/api/generate' && req.method==='POST'){
-    if(!token)return json(res,503,{error:'AI engine is not configured on the server yet.'});
-    let body=''; req.on('data',c=>body+=c); req.on('end',async()=>{try {const {prompt}=JSON.parse(body);if(!prompt||prompt.length>1200)return json(res,400,{error:'Enter a valid prompt.'});const r=await fetch(`https://api-inference.huggingface.co/models/${MODEL}`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({inputs:prompt})});if(!r.ok){const t=await r.text();return json(res,r.status,{error:'The AI engine could not generate this request.',detail:t.slice(0,300)})}const b=Buffer.from(await r.arrayBuffer());res.writeHead(200,{'content-type':'image/png','cache-control':'no-store'});res.end(b)}catch(e){json(res,500,{error:'Generation failed. Please try again.'})}});return;
-  }
-  res.writeHead(404,{'content-type':'text/plain'});res.end('Not found');
-});server.listen(PORT,()=>console.log(`Moviewstore server listening on ${PORT}`));
+// Moviewstore secure AI image endpointconst http = require('http'); const fs = require('fs'); const path = require('path');const PORT = process.env.PORT || 8787; const MODEL = process.env.HF_MODEL || 'stabilityai/stable-diffusion-xl-base-1.0'; const token = process.env.HF_TOKEN; const appDir=__dirname;function json(res,code,data){res.writeHead(code,{'content-type':'application/json'});res.end(JSON.stringify(data));}const server=http.createServer(async(req,res)=>{const route=(req.url||'/').split('?')[0]; if(route==='/'||route==='/index.html'){try{const html=fs.readFileSync(path.join(appDir,'index.html'));res.writeHead(200,{'content-type':'text/html; charset=utf-8'});return res.end(html)}catch(e){return json(res,500,{error:'Frontend file is missing.'})}} if(route==='/api/generate'&&req.method==='POST'){if(!token)return json(res,503,{error:'AI engine is not configured on the server yet.'});let body='';req.on('data',c=>body+=c);req.on('end',async()=>{try{const {prompt}=JSON.parse(body);if(!prompt||prompt.length>1200)return json(res,400,{error:'Enter a valid prompt.'});const r=await fetch(`https://router.huggingface.co/hf-inference/models/${MODEL}`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({inputs:prompt})});if(!r.ok){const t=await r.text();return json(res,r.status,{error:'The AI engine could not generate this request.',detail:t.slice(0,300)})}const b=Buffer.from(await r.arrayBuffer());res.writeHead(200,{'content-type':r.headers.get('content-type')||'image/png','cache-control':'no-store'});res.end(b)}catch(e){json(res,502,{error:'The AI provider is temporarily unavailable.',detail:String(e&&e.message||e).slice(0,240)})}});return}res.writeHead(404);res.end('Not found')});server.listen(PORT,()=>console.log(`Moviewstore server listening on ${PORT}`));
